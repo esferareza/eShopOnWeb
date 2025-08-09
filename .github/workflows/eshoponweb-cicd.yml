@@ -1,9 +1,7 @@
 name: eShopOnWeb Build and Test
 
-# Triggers
 on: [push, workflow_dispatch]
 
-# Environment variables
 env:
   RESOURCE_GROUP: rg-eshoponweb-rei
   LOCATION: westus2
@@ -36,21 +34,21 @@ jobs:
 
       - name: Publish Web project
         run: |
-          dotnet publish ./src/Web/Web.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
-          cd ${{env.DOTNET_ROOT}}/myapp
+          dotnet publish ./src/Web/Web.csproj -c Release -o ./publish
+          cd ./publish
           zip -r ../app.zip .
 
       - name: Upload .NET artifact
         uses: actions/upload-artifact@v4
         with:
           name: .net-app
-          path: ${{env.DOTNET_ROOT}}/app.zip
+          path: ./app.zip
 
       - name: Upload Bicep template
         uses: actions/upload-artifact@v4
         with:
           name: bicep-template
-          path: ${{ env.TEMPLATE_FILE }}
+          path: infra/webapp.bicep
 
   deploy:
     name: Deploy to Azure
@@ -71,6 +69,10 @@ jobs:
           name: bicep-template
           path: bicep-template
 
+      - name: Install latest Azure CLI
+        run: |
+          curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -89,12 +91,15 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
+            set -e
+            echo "Setting subscription..."
             az account set --subscription ${{ env.SUBSCRIPTION_ID }}
+            echo "Deploying Bicep template..."
             az deployment group create \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --template-file bicep-template/webapp.bicep \
               --parameters webAppName=${{ env.WEBAPP_NAME }} location=${{ env.LOCATION }} \
-              --debug
+              --debug || { echo '❌ Deployment failed'; exit 1; }
 
       - name: Validate artifact exists
         run: |
@@ -108,8 +113,10 @@ jobs:
         uses: azure/cli@v2
         with:
           inlineScript: |
+            set -e
+            echo "Deploying app.zip to WebApp..."
             az webapp deployment source config-zip \
               --name ${{ env.WEBAPP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
               --src .net-app/app.zip \
-              --debug
+              --debug || { echo '❌ WebApp deployment failed'; exit 1; }
