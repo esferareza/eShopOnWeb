@@ -81,12 +81,19 @@ jobs:
           parameters: 'webAppName=${{ env.WEBAPP_NAME }} location=${{ env.LOCATION }}'
           failOnStdErr: false
 
+      - name: Validate artifact exists
+        run: |
+          if [ ! -f .net-app/app.zip ]; then
+            echo "Artifact not found: .net-app/app.zip"
+            exit 1
+          fi
+
       - name: Publish Website to WebApp
-        uses: Azure/cli@v2
+        uses: azure/cli@v2
         with:
           inlineScript: |
-            az webapp deploy \
+            az webapp deployment source config-zip \
               --name ${{ env.WEBAPP_NAME }} \
               --resource-group ${{ env.RESOURCE_GROUP }} \
-              --src-path .net-app/app.zip \
-              --type zip
+              --src .net-app/app.zip \
+              --debug
