@@ -16,7 +16,8 @@ jobs:
     name: Build and Test .NET App
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -24,13 +25,16 @@ jobs:
           dotnet-version: '8.0.x'
           dotnet-quality: 'preview'
 
-      - name: Build with dotnet
-        run: dotnet build ./eShopOnWeb.sln --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore ./eShopOnWeb.sln
 
-      - name: Test with dotnet
-        run: dotnet test ./eShopOnWeb.sln --configuration Release
+      - name: Build solution
+        run: dotnet build ./eShopOnWeb.sln --configuration Release --no-restore
 
-      - name: dotnet publish
+      - name: Run tests
+        run: dotnet test ./eShopOnWeb.sln --configuration Release --no-build --verbosity normal
+
+      - name: Publish Web project
         run: |
           dotnet publish ./src/Web/Web.csproj -c Release -o ${{env.DOTNET_ROOT}}/myapp
           cd ${{env.DOTNET_ROOT}}/myapp
@@ -75,9 +79,10 @@ jobs:
       - name: Validate Bicep template exists
         run: |
           if [ ! -f bicep-template/webapp.bicep ]; then
-            echo "Bicep template not found: bicep-template/webapp.bicep"
+            echo "❌ Bicep template not found: bicep-template/webapp.bicep"
             exit 1
           fi
+          echo "✅ Bicep template found:"
           ls -la bicep-template
 
       - name: Deploy infrastructure using Azure CLI
@@ -94,9 +99,10 @@ jobs:
       - name: Validate artifact exists
         run: |
           if [ ! -f .net-app/app.zip ]; then
-            echo "Artifact not found: .net-app/app.zip"
+            echo "❌ Artifact not found: .net-app/app.zip"
             exit 1
           fi
+          echo "✅ Artifact found: .net-app/app.zip"
 
       - name: Publish Website to WebApp
         uses: azure/cli@v2
