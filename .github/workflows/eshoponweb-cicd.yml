@@ -76,7 +76,7 @@ jobs:
       uses: azure/login@v2
       with:
         creds: 
-  {"clientId": "816eab39-51ce-446e-ac7f-9de3bd73adf6",
+  ${{"clientId": "816eab39-51ce-446e-ac7f-9de3bd73adf6",
   "clientSecret": "F488Q-Yw8J1Sj5JouMNxwdNTt6iyXQ2z4ArxCr",
   "subscriptionId": "ffba7af0-6e74-4ff3-becd-4b479126856c",
   "tenantId": "4fc372a-37a4-44f8-91b2-5faf34523c62",
@@ -86,7 +86,7 @@ jobs:
   "sqlManagementEndpointUrl": "https://management.core.windows.net:8443/",
   "galleryEndpointUrl": "https://gallery.azure.com/",
   "managementEndpointUrl": "https://management.core.windows.net/"
-}
+}}
 
            
     # Deploy Azure WebApp using Bicep file
